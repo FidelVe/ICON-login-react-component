@@ -23,6 +23,10 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
+.App-header > p {
+  word-wrap: break-word;
+  width: 90%;
+}
 
 .App-link {
   color: #61dafb;

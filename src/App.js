@@ -5,30 +5,38 @@ import "./App.css";
 
 function App() {
   const [loginModalIsOpen, setLoginModalIsOpen] = useState(false);
+  const [loginData, setLoginData] = useState("");
 
   function handleLogin() {
     // login with ICON
     setLoginModalIsOpen(true);
   }
 
-  function closeLoginModal(dataFromModal) {
+  function closeLoginModal() {
     // this function handles the closing of the LoginModal
     // dataFromModal is the login data passed from the component
     // to the parent after the login process
     setLoginModalIsOpen(false);
-    console.log(dataFromModal);
+  }
+
+  function getDataFromLoginModal(loginData) {
+    // Callback function that gets called from within LoginModal
+    // to pass login data into parent
+    setLoginData(loginData);
   }
   return (
     <div className="App">
       <header className="App-header">
-        <p>Login with ICON</p>
+        <h2>Login with ICON</h2>
         <button className="App-button-login" onClick={handleLogin}>
           <p>Log in</p>
         </button>
         <LoginModal
           isOpen={loginModalIsOpen}
           onRequestClose={closeLoginModal}
+          onRetrieveData={getDataFromLoginModal}
         />
+        <p>Login data: {JSON.stringify(loginData)}</p>
       </header>
     </div>
   );
