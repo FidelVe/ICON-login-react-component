@@ -1,6 +1,6 @@
 // Modal react component for login with ICON
 //
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-modal";
 import "./LoginModal.css";
 import IconLogo from "./icon-logo.png";
@@ -8,6 +8,7 @@ import HanaLogo from "./hana-logo.jpg";
 import LedgerLogo from "./ledger-logo.png";
 import Icx from "./utils/hw-app-icx/Icx.js";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
+import CancelLogo from "../../cancel-logo.svg";
 
 // for accesibility purposes
 Modal.setAppElement("#root");
@@ -74,6 +75,8 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
   // onRequestClose: callback to change modal state to close on parent component
   // }
   //
+  const [ledgerModalOn, setLedgerModalOn] = useState(false);
+  const [ledgerModalIsWaiting, setLedgerModalIsWaiting] = useState(true);
   const loginData = {
     // after user login the following set of data will be
     // passed to parent component
@@ -81,6 +84,10 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
     methodUsed: null,
     successfulLogin: false
   };
+
+  function closeLedgerModal() {
+    setLedgerModalOn(false);
+  }
 
   function closeModal() {
     // send signal to close LoginModal
@@ -100,8 +107,16 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
 
   async function handleLedgerLogin() {
     // login with ledger using webUSB method
-    const ledgerAddresses = retrieveICONLedgerAddresses();
+
+    // open ledger modal window and show 'connecting' animation
+    setLedgerModalOn(true);
+    setLedgerModalIsWaiting(true);
+
+    const ledgerAddresses = await retrieveICONLedgerAddresses();
     console.log(ledgerAddresses);
+
+    // close 'connection animation and show ledger addresses
+    setLedgerModalIsWaiting(false);
   }
 
   useEffect(() => {
@@ -184,6 +199,39 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
         <div className="LoginModal-footer"></div>
       </div>
       {/* <button onClick={closeModal}>Close</button> */}
+      <Modal
+        isOpen={ledgerModalOn}
+        onRequestClose={closeLedgerModal}
+        style={customStyles}
+      >
+        {" "}
+        {ledgerModalIsWaiting ? (
+          <div className="loginModal-ledgerModal">
+            <div className="loginModal-ledgerModal-section">
+              <img
+                src={IconLogo}
+                className="loginModal-ledgerModal-logo"
+                alt="icon logo"
+              />
+              <p>Connecting to ledger...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="loginModal-ledgerModal">
+            <div className="loginModal-ledgerModal-section">
+              <img
+                src={CancelLogo}
+                className="loginModal-ledgerModal-logo"
+                alt="icon logo"
+              />
+              <p>
+                Failed to connect Ledger, try refreshing the page and/or
+                reconnecting device.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </Modal>
   );
 }
