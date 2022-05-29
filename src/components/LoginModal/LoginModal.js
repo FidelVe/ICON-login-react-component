@@ -6,6 +6,8 @@ import "./LoginModal.css";
 import IconLogo from "./icon-logo.png";
 import HanaLogo from "./hana-logo.jpg";
 import LedgerLogo from "./ledger-logo.png";
+import Icx from "./utils/hw-app-icx/Icx.js";
+import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 
 // for accesibility purposes
 Modal.setAppElement("#root");
@@ -26,12 +28,48 @@ const LOGIN_METHODS = {
   ledger2: "LEDGER2"
 };
 
-function LoginModal(props) {
+const PATH = "44'/4801368'/0'/0'";
+
+async function retrieveICONLedgerAddresses(count = 20) {
+  // connects to a ledger device and retrieve a set amount of ICON
+  // addresses (count)
+  let addressesData = [
+    // {
+    //   bip44Path: "44'/4801368'/0'/0'/n'" // bip44 path of the address
+    //   icxAddress: 'hx49394...' // ICX address for the corresponding bip44path
+    // }
+  ];
+  try {
+    // connects to ledger device via webhid
+    const transport = await TransportWebHID.create();
+
+    const appIcx = new Icx(transport);
+    for (let i = 0; i < count; i++) {
+      let currentPath = PATH + `/${i.toString()}'`;
+      const icxAddress = await appIcx.getAddress(currentPath, false, true);
+
+      addressesData.push({
+        bip44Path: currentPath,
+        icxAddress: icxAddress.address.toString()
+      });
+    }
+
+    return addressesData;
+  } catch (err) {
+    // handles error
+    console.log("error: ");
+    console.log(err);
+    return null;
+  }
+}
+
+function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
   // Modal window for login with ICON.
   // This is a stateless component, the OPEN/CLOSE state is
   // controlled by the parent state
   //
   // props = {
+  // onRetrieveData:
   // isOpen: bool // default is false
   // onRequestClose: callback to change modal state to close on parent component
   // }
@@ -43,31 +81,10 @@ function LoginModal(props) {
     methodUsed: null,
     successfulLogin: false
   };
-  function iconexRelayResponseEventHandler(evnt) {
-    const { type, payload } = evnt.detail;
-
-    switch (type) {
-      case "RESPONSE_ADDRESS":
-        loginData.selectedWallet = payload;
-        loginData.methodUsed = LOGIN_METHODS.iconex;
-        loginData.successfulLogin = true;
-        break;
-
-      default:
-        console.error("Error on ICONEX_RELAY_RESPONSE");
-        console.error("type: " + type);
-        console.error("payload: " + JSON.stringify(payload));
-    }
-
-    // send data to parent component
-    props.onRetrieveData(loginData);
-    // close LoginModal
-    closeModal();
-  }
 
   function closeModal() {
     // send signal to close LoginModal
-    props.onRequestClose();
+    onRequestClose();
   }
 
   function handleIconLogin() {
@@ -81,16 +98,43 @@ function LoginModal(props) {
     );
   }
 
+  async function handleLedgerLogin() {
+    // login with ledger using webUSB method
+    const ledgerAddresses = retrieveICONLedgerAddresses();
+    console.log(ledgerAddresses);
+  }
+
   useEffect(() => {
+    function iconexRelayResponseEventHandler(evnt) {
+      const { type, payload } = evnt.detail;
+
+      switch (type) {
+        case "RESPONSE_ADDRESS":
+          loginData.selectedWallet = payload;
+          loginData.methodUsed = LOGIN_METHODS.iconex;
+          loginData.successfulLogin = true;
+          break;
+
+        default:
+          console.error("Error on ICONEX_RELAY_RESPONSE");
+          console.error("type: " + type);
+          console.error("payload: " + JSON.stringify(payload));
+      }
+
+      // send data to parent component
+      onRetrieveData(loginData);
+      // close LoginModal
+      closeModal();
+    }
     window.addEventListener(
       "ICONEX_RELAY_RESPONSE",
       iconexRelayResponseEventHandler
     );
-  }, []);
+  });
 
   return (
     <Modal
-      isOpen={props.isOpen}
+      isOpen={isOpen}
       // isOpen={true}
       onRequestClose={closeModal}
       style={customStyles}
@@ -107,21 +151,21 @@ function LoginModal(props) {
             </div>
             <div className="LoginModal-body-section-item">
               <span className="LoginModal-body-section-item-img">
-                <img src={IconLogo} />
+                <img alt="" src={IconLogo} />
               </span>
               <span className="LoginModal-body-section-item-img">
-                <img src={HanaLogo} />
+                <img alt="" src={HanaLogo} />
               </span>
             </div>
           </div>
           <hr />
-          <div className="LoginModal-body-section">
+          <div className="LoginModal-body-section" onClick={handleLedgerLogin}>
             <div className="LoginModal-body-section-item">
               <p>Login using Ledger</p>
             </div>
             <div className="LoginModal-body-section-item">
               <span className="LoginModal-body-section-item-img">
-                <img src={LedgerLogo} />
+                <img alt="" src={LedgerLogo} />
               </span>
             </div>
           </div>
@@ -132,7 +176,7 @@ function LoginModal(props) {
             </div>
             <div className="LoginModal-body-section-item">
               <span className="LoginModal-body-section-item-img">
-                <img src={LedgerLogo} />
+                <img alt="" src={LedgerLogo} />
               </span>
             </div>
           </div>

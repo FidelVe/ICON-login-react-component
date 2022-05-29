@@ -2,10 +2,16 @@ import { useState } from "react";
 import LoginModal from "./components/LoginModal/LoginModal.js";
 
 import "./App.css";
+import IconLogo from "./icon-logo.png";
 
 function App() {
   const [loginModalIsOpen, setLoginModalIsOpen] = useState(false);
   const [loginData, setLoginData] = useState("");
+  // loginData: {
+  //   selectedWallet: 'hx93940...',
+  //     methodUsed: 'ICONEX' | 'LEDGER1',
+  //     successfulLogin: bool
+  // }
 
   function handleLogin() {
     // login with ICON
@@ -27,6 +33,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
+        <img src={IconLogo} className="App-logo" alt="icon logo" />
         <h2>Login with ICON</h2>
         <button className="App-button-login" onClick={handleLogin}>
           <p>Log in</p>
