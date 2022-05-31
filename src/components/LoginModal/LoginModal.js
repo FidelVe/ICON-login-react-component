@@ -9,6 +9,12 @@ import LedgerLogo from "./ledger-logo.png";
 import Icx from "./utils/hw-app-icx/Icx.js";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import CancelLogo from "../../cancel-logo.svg";
+import { v4 as uuidv4 } from "uuid";
+import "@fontsource/lato";
+
+// testing data
+// import mockData from "../../../local_dev_files/mockData.js";
+// const MOCK_DATA = mockData();
 
 // for accesibility purposes
 Modal.setAppElement("#root");
@@ -25,8 +31,7 @@ const customStyles = {
 };
 const LOGIN_METHODS = {
   iconex: "ICONEX",
-  ledger1: "LEDGER1",
-  ledger2: "LEDGER2"
+  ledger: "LEDGER"
 };
 
 const PATH = "44'/4801368'/0'/0'";
@@ -64,6 +69,18 @@ async function retrieveICONLedgerAddresses(count = 20) {
   }
 }
 
+function getLoginDataInitState() {
+  // initialize loginData
+  // after user login the following set of data will be
+  // passed to parent component
+  return {
+    selectedWallet: null,
+    methodUsed: null,
+    bip44Path: null,
+    successfulLogin: false
+  };
+}
+
 function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
   // Modal window for login with ICON.
   // This is a stateless component, the OPEN/CLOSE state is
@@ -77,13 +94,16 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
   //
   const [ledgerModalOn, setLedgerModalOn] = useState(false);
   const [ledgerModalIsWaiting, setLedgerModalIsWaiting] = useState(true);
-  const loginData = {
-    // after user login the following set of data will be
-    // passed to parent component
-    selectedWallet: null,
-    methodUsed: null,
-    successfulLogin: false
-  };
+  const [ledgerDidConnect, setLedgerDidConnect] = useState(false);
+  const [ledgerAddressesState, setLedgerAddressesState] = useState(null);
+  const [
+    indexOfLedgerAddressSelected,
+    setIndexOfLedgerAddressSelected
+  ] = useState(0);
+  const [loginData, setLoginData] = useState(getLoginDataInitState());
+
+  // const loginData = getLoginDataInitState();
+  // const ledgerWallets = [];
 
   function closeLedgerModal() {
     setLedgerModalOn(false);
@@ -111,23 +131,72 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
     // open ledger modal window and show 'connecting' animation
     setLedgerModalOn(true);
     setLedgerModalIsWaiting(true);
+    let ledgerWallets = [];
 
     const ledgerAddresses = await retrieveICONLedgerAddresses();
-    console.log(ledgerAddresses);
+    // const ledgerAddresses = MOCK_DATA; // for testing purposes
 
+    if (ledgerAddresses == null) {
+      // if ledger connection failed
+      setLedgerDidConnect(false);
+    } else {
+      // if ledger connected succesfully
+      for (const wallet of ledgerAddresses) {
+        ledgerWallets.push(wallet);
+      }
+
+      setLedgerAddressesState(ledgerWallets);
+      setLedgerDidConnect(true);
+    }
     // close 'connection animation and show ledger addresses
     setLedgerModalIsWaiting(false);
+  }
+
+  function onSelectLedgerWallet(walletIndex) {
+    // user selected a ledger wallet but havent click 'cancel' or 'select' button
+
+    // set state of selected wallet
+    setIndexOfLedgerAddressSelected(walletIndex);
+
+    // set wallet info on loginData
+    let newLoginData = loginData;
+    newLoginData.selectedWallet = ledgerAddressesState[walletIndex].icxAddress;
+    newLoginData.bip44Path = ledgerAddressesState[walletIndex].bip44Path;
+    setLoginData(newLoginData);
+  }
+
+  function handleLedgerWalletSelect() {
+    // user selected a ledger wallet and clicked "select" button
+    let newLoginData = loginData;
+    newLoginData.methodUsed = LOGIN_METHODS.ledger;
+    newLoginData.successfulLogin = true;
+    setLoginData(newLoginData);
+
+    onRetrieveData(loginData);
+    closeLedgerModal();
+    closeModal();
+  }
+  function handleLedgerWalletCancel() {
+    // user selected a ledger wallet and clicked "cancel" button
+    const blankLoginData = getLoginDataInitState();
+
+    // reset login data back to initial values
+    for (let label in loginData) {
+      loginData[label] = blankLoginData[label];
+    }
+    closeLedgerModal();
   }
 
   useEffect(() => {
     function iconexRelayResponseEventHandler(evnt) {
       const { type, payload } = evnt.detail;
+      const localLoginData = getLoginDataInitState();
 
       switch (type) {
         case "RESPONSE_ADDRESS":
-          loginData.selectedWallet = payload;
-          loginData.methodUsed = LOGIN_METHODS.iconex;
-          loginData.successfulLogin = true;
+          localLoginData.selectedWallet = payload;
+          localLoginData.methodUsed = LOGIN_METHODS.iconex;
+          localLoginData.successfulLogin = true;
           break;
 
         default:
@@ -137,7 +206,8 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
       }
 
       // send data to parent component
-      onRetrieveData(loginData);
+      setLoginData(localLoginData);
+      onRetrieveData(localLoginData);
       // close LoginModal
       closeModal();
     }
@@ -184,17 +254,6 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
               </span>
             </div>
           </div>
-          <hr />
-          <div className="LoginModal-body-section">
-            <div className="LoginModal-body-section-item">
-              <p>Login using Ledger - U2F</p>
-            </div>
-            <div className="LoginModal-body-section-item">
-              <span className="LoginModal-body-section-item-img">
-                <img alt="" src={LedgerLogo} />
-              </span>
-            </div>
-          </div>
         </div>
         <div className="LoginModal-footer"></div>
       </div>
@@ -214,6 +273,42 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
                 alt="icon logo"
               />
               <p>Connecting to ledger...</p>
+            </div>
+          </div>
+        ) : ledgerDidConnect ? (
+          <div className="loginModal-ledgerModal">
+            <div className="loginModal-ledgerModal-section">
+              <div className="loginModal-ledgerModal-section-wallet">
+                {ledgerAddressesState.map((wallet, index) => {
+                  return (
+                    <div
+                      className={
+                        indexOfLedgerAddressSelected === index
+                          ? "loginModal-ledgerModal-section-wallet-section ledgerAddressSelected"
+                          : "loginModal-ledgerModal-section-wallet-section"
+                      }
+                      key={uuidv4()}
+                      onClick={() => onSelectLedgerWallet(index)}
+                    >
+                      <div className="loginModal-ledgerModal-section-wallet-index">
+                        <p>{index + 1}</p>
+                      </div>
+                      <div className="loginModal-ledgerModal-section-wallet-content">
+                        <div className="loginModal-ledgerModal-section-wallet-address">
+                          <p>{wallet.icxAddress}</p>
+                        </div>
+                        <div className="loginModal-ledgerModal-section-wallet-balance">
+                          <p>Balance: </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="loginModal-ledgerModal-section-container-btn">
+                <button onClick={handleLedgerWalletCancel}>Cancel</button>
+                <button onClick={handleLedgerWalletSelect}>Select</button>
+              </div>
             </div>
           </div>
         ) : (
