@@ -2,15 +2,17 @@
 //
 import { useEffect, useState } from "react";
 import Modal from "react-modal";
-import "./LoginModal.css";
+import Icx from "./utils/hw-app-icx/Icx.js";
+import TransportWebHID from "@ledgerhq/hw-transport-webhid";
+import { v4 as uuidv4 } from "uuid";
+import { getIcxBalance } from "../../utils/IconService.js";
+
+import "@fontsource/lato";
 import IconLogo from "./icon-logo.png";
 import HanaLogo from "./hana-logo.jpg";
 import LedgerLogo from "./ledger-logo.png";
-import Icx from "./utils/hw-app-icx/Icx.js";
-import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import CancelLogo from "../../cancel-logo.svg";
-import { v4 as uuidv4 } from "uuid";
-import "@fontsource/lato";
+import "./LoginModal.css";
 
 // testing data
 // import mockData from "../../../local_dev_files/mockData.js";
@@ -35,6 +37,8 @@ const LOGIN_METHODS = {
 };
 
 const PATH = "44'/4801368'/0'/0'";
+
+// async function getIcxBalance(address) {}
 
 async function retrieveICONLedgerAddresses(count = 20) {
   // connects to a ledger device and retrieve a set amount of ICON
@@ -101,6 +105,7 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
     setIndexOfLedgerAddressSelected
   ] = useState(0);
   const [loginData, setLoginData] = useState(getLoginDataInitState());
+  const [walletsIcxBalance, setWalletsIcxBalance] = useState(null);
 
   // const loginData = getLoginDataInitState();
   // const ledgerWallets = [];
@@ -125,6 +130,16 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
     );
   }
 
+  async function getWalletsBalance(wallets) {
+    // get the ICX balance of a list of wallets
+    let walletsBalance = [];
+    for (const wallet of wallets) {
+      let balance = await getIcxBalance(wallet.icxAddress);
+      walletsBalance.push(balance);
+    }
+    setWalletsIcxBalance(walletsBalance);
+  }
+
   async function handleLedgerLogin() {
     // login with ledger using webUSB method
 
@@ -141,6 +156,10 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
       setLedgerDidConnect(false);
     } else {
       // if ledger connected succesfully
+
+      // get the balance of each wallet
+      getWalletsBalance(ledgerAddresses);
+
       for (const wallet of ledgerAddresses) {
         ledgerWallets.push(wallet);
       }
@@ -298,7 +317,11 @@ function LoginModal({ onRequestClose, onRetrieveData, isOpen, ...props }) {
                           <p>{wallet.icxAddress}</p>
                         </div>
                         <div className="loginModal-ledgerModal-section-wallet-balance">
-                          <p>Balance: </p>
+                          {walletsIcxBalance == null ? (
+                            <p>Balance: -.- ICX</p>
+                          ) : (
+                            <p>Balance: {walletsIcxBalance[index]} ICX</p>
+                          )}
                         </div>
                       </div>
                     </div>
