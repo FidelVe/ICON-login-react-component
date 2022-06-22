@@ -2,6 +2,7 @@
   "name": "icon-login-react-component",
   "version": "0.1.0",
   "private": false,
+  "homepage": "/docs/",
   "dependencies": {
     "@fontsource/lato": "^4.5.8",
     "@ledgerhq/hw-transport-webhid": "^6.27.1",
