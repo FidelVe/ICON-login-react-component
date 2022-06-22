@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/static/css/main.e3960891.css",
+    "main.js": "/static/js/main.6d919463.js",
+    "static/js/787.1b3717ae.chunk.js": "/static/js/787.1b3717ae.chunk.js",
+    "static/media/lato-all-400-normal.woff": "/static/media/lato-all-400-normal.3dc1eff492ab1f598560.woff",
+    "static/media/ledger-logo.png": "/static/media/ledger-logo.080469780fdceea16f2a.png",
+    "static/media/lato-latin-400-normal.woff2": "/static/media/lato-latin-400-normal.be36596da218e1eec01c.woff2",
+    "static/media/icon-logo.png": "/static/media/icon-logo.7f9b3ff556491c5d47e4.png",
+    "static/media/lato-latin-ext-400-normal.woff2": "/static/media/lato-latin-ext-400-normal.361f3dbb9db6a5980326.woff2",
+    "static/media/cancel-logo.svg": "/static/media/cancel-logo.d7fb28b2a8fd04042a4f787a5fa2aedb.svg",
+    "index.html": "/index.html",
+    "main.e3960891.css.map": "/static/css/main.e3960891.css.map",
+    "main.6d919463.js.map": "/static/js/main.6d919463.js.map",
+    "787.1b3717ae.chunk.js.map": "/static/js/787.1b3717ae.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e3960891.css",
+    "static/js/main.6d919463.js"
+  ]
+}
